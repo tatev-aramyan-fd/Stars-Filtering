@@ -76,3 +76,4 @@ if __name__ == "__main__":
     fov_v = 30
     num = 15
     ra_dec = (45.0, 87.0)
+
