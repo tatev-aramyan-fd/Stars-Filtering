@@ -42,14 +42,13 @@ def from_tsv_to_data_list():
 def store_stars_in_fov(ra: float, dec: float,
                        id_: float, brightness: float,
                        storage: list):
-    if id_ == '':
-        raise Exception("ID of the star must be not null!!!")
-    if not (ra == '' or dec == '' or id_ == '' or brightness == ''):
-
-        if ((ra_dec[0] < ra) and (ra < fov_h + ra_dec[0])) \
-                and (ra_dec[1] < fov_v and dec < fov_v + ra_dec[1]):
+    try:
+        if (ra_dec[0] < ra and (ra < (fov_h + ra_dec[0]))) \
+                and ((ra_dec[1] < dec) and (dec < (fov_v + ra_dec[1]))):
             storage.append([ra, dec, id_, brightness])
-    else:
+
+        return storage
+    except:
         raise Exception("Some data are null. With nullable data further work is impossible!!!!!!!")
 
 
@@ -69,11 +68,65 @@ def sort_by_last_value_in_each_el(lst: list) -> list:   # 2d list/ matrix
     return lst
 
 
+def update_data_with_distances() -> list:
+    data_arr = n_bright_stars().copy()
+    for i in data_arr:
+        ra1, dec1 = ra_dec
+        ra2 = i[0]
+        dec2 = i[1]
+        i.append(distance_between_two_points((ra1, dec1), (ra2, dec2)))
+    return data_arr
+
+
+def final_needed_data_sorted_by_distance() -> list:
+    arr = update_data_with_distances()
+    return sort_by_last_value_in_each_el(arr)
+
+
+def n_bright_stars() -> list:
+    data = from_tsv_to_data_list()
+    sorted_by_brightness = sort_by_last_value_in_each_el(data)
+    return sorted_by_brightness[:num]
+
+
+def write_to_csv_file():
+    current_timestamp = str(date.today()) + ".csv"
+    with open(current_timestamp, 'w', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow([*header_from_tsv(filename), 'distance'])
+        for i in final_needed_data_sorted_by_distance():
+            writer.writerow(i)
+
+
+def run_application(ra_dec_coordinates: tuple,
+                    fov_h_degree: float,
+                    fov_v_degree: float,
+                    num_of_stars: int):
+    if (fov_h_degree<0 or fov_h_degree>360) \
+            or (fov_v_degree > 90 or fov_v < -90)\
+            or num_of_stars < 0\
+            or ra_dec_coordinates[0]<0 or ra_dec_coordinates[0]>360 \
+            or ra_dec_coordinates[1]>90 or ra_dec_coordinates[1]<-90:
+        raise Exception("not valid input")
+    try:
+        if isinstance(ra_dec_coordinates, tuple) \
+                and isinstance(fov_h_degree, (float, int)) \
+                and isinstance(fov_v_degree, (float, int)) \
+                and isinstance(num_of_stars, int):
+            write_to_csv_file()
+    except Exception:
+        raise Exception("Something went wrong. Check given arguments!!!")
+
+
 if __name__ == "__main__":
     # filename = "cleaned_stars.tsv"
     filename = "337.all.tsv"
-    fov_h = 30
-    fov_v = 30
-    num = 15
-    ra_dec = (45.0, 87.0)
+    fov_h = 50.0
+    fov_v = 45
+    num = 10
+    ra_dec = (45.0, 32.0)
+    start = time.time()
+    run_application(ra_dec, fov_h, fov_v, num)
+    end = time.time()
+    print(f"application runs in {end-start} seconds")
 
